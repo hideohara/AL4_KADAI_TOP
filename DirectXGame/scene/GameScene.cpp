@@ -66,6 +66,10 @@ void GameScene::Initialize() {
 	textureHandleGameClear_ = TextureManager::Load("gameclear.png");
 	spriteGameClear_.reset(Sprite::Create(textureHandleGameClear_, {0, 0}));
 
+	// フェード
+	textureHandleBlack_ = TextureManager::Load("black.png");
+	spriteBlack_.reset(Sprite::Create(textureHandleBlack_, {0, 0}));
+
 	// タイトルの生成
 	title_ = std::make_unique<Title>();
 	title_->Initialize(
@@ -75,6 +79,10 @@ void GameScene::Initialize() {
 	gameClear_ = std::make_unique<GameClear>();
 	gameClear_->Initialize(
 	    spriteGameClear_.get(), textureHandleGameClear_, spriteKey_.get(), textureHandleKey_);
+
+	// フェードの生成
+	fade_ = std::make_unique<Fade>();
+	fade_->Initialize(spriteBlack_.get(), textureHandleBlack_);
 }
 
 void GameScene::Update() {
@@ -104,21 +112,35 @@ void GameScene::Update() {
 			}
 		}
 		if (hitCount_ >= 10) {
+			fade_->FadeOutStart();
+		}
+		if (fade_->IsEnd() == true) {
 			sceneMode_ = 2;
+			fade_->FadeInStart();
 		}
 		break;
 	case 1:
 		if (title_->Update() == true) {
+			fade_->FadeOutStart();
+		}
+		if (fade_->IsEnd() == true) {
 			sceneMode_ = 0u;
 			hitCount_ = 0;
+			fade_->FadeInStart();
 		}
 		break;
 	case 2:
 		if (gameClear_->Update() == true) {
+			fade_->FadeOutStart();
+		}
+		if (fade_->IsEnd() == true) {
 			sceneMode_ = 1u;
+			fade_->FadeInStart();
 		}
 		break;
 	}
+
+	fade_->Update();
 }
 
 void GameScene::Draw() {
@@ -178,6 +200,8 @@ void GameScene::Draw() {
 		gameClear_->Draw();
 		break;
 	}
+
+	fade_->Draw();
 
 	// スプライト描画後処理
 	Sprite::PostDraw();
