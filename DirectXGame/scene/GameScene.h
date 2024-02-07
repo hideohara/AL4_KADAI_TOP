@@ -2,20 +2,19 @@
 
 #include "Audio.h"
 #include "DirectXCommon.h"
+#include "Enemy.h"
+#include "FollowCamera.h"
+#include "GameClear.h"
+#include "Ground.h"
 #include "Input.h"
 #include "Model.h"
-#include "Sprite.h"
-#include "ViewProjection.h"
-#include "WorldTransform.h"
 #include "Player.h"
 #include "Skydome.h"
-#include "Ground.h"
-#include "FollowCamera.h"
-#include "Enemy.h"
-
-
+#include "Sprite.h"
+#include "Title.h"
+#include "ViewProjection.h"
+#include "WorldTransform.h"
 #include <memory>
-
 
 /// <summary>
 /// ゲームシーン
@@ -76,4 +75,23 @@ private: // メンバ変数
 	std::unique_ptr<Ground> ground_;
 	std::unique_ptr<FollowCamera> followCamera_;
 	std::unique_ptr<Enemy> enemy_;
+	std::unique_ptr<Title> title_;
+	std::unique_ptr<GameClear> gameClear_;
+
+	// タイトル
+	uint32_t textureHandleTitle_ = 0u;
+	std::unique_ptr<Sprite> spriteTitle_;
+
+	// エンターキー
+	uint32_t textureHandleKey_ = 0u;
+	std::unique_ptr<Sprite> spriteKey_;
+
+	// ゲームクリア
+	uint32_t textureHandleGameClear_ = 0u;
+	std::unique_ptr<Sprite> spriteGameClear_;
+
+	// シーンモード（０：ゲームプレイ、１：タイトル、２：ゲームクリア）
+	uint32_t sceneMode_ = 1u;
+
+	uint32_t hitCount_ = 0;
 };

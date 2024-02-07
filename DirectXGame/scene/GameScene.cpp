@@ -2,8 +2,6 @@
 #include "TextureManager.h"
 #include <cassert>
 
-// KamataEngine 2023/10/13
-
 GameScene::GameScene() {}
 
 GameScene::~GameScene() {
@@ -55,30 +53,71 @@ void GameScene::Initialize() {
 	// 敵の生成
 	enemy_ = std::make_unique<Enemy>();
 	enemy_->Initialize(modelEnemy_.get());
+
+	// タイトル背景
+	textureHandleTitle_ = TextureManager::Load("title.png");
+	spriteTitle_.reset(Sprite::Create(textureHandleTitle_, {0, 0}));
+
+	// キー
+	textureHandleKey_ = TextureManager::Load("enter.png");
+	spriteKey_.reset(Sprite::Create(textureHandleKey_, {400, 500}));
+
+	// ゲームクリア背景
+	textureHandleGameClear_ = TextureManager::Load("gameclear.png");
+	spriteGameClear_.reset(Sprite::Create(textureHandleGameClear_, {0, 0}));
+
+	// タイトルの生成
+	title_ = std::make_unique<Title>();
+	title_->Initialize(
+	    spriteTitle_.get(), textureHandleTitle_, spriteKey_.get(), textureHandleKey_);
+
+	// ゲームクリアの生成
+	gameClear_ = std::make_unique<GameClear>();
+	gameClear_->Initialize(
+	    spriteGameClear_.get(), textureHandleGameClear_, spriteKey_.get(), textureHandleKey_);
 }
 
 void GameScene::Update() {
-	// 各クラスの更新
-	player_->Update();
-	skydome_->Update();
-	ground_->Update();
-	enemy_->Update();
-	followCamera_->Update();
+	switch (sceneMode_) {
+	case 0:
+		// 各クラスの更新
+		player_->Update();
+		skydome_->Update();
+		ground_->Update();
+		enemy_->Update();
+		followCamera_->Update();
 
-	// 追従カメラのビュー行列をゲームシーンのビュープロジェクションにコピー;
-	viewProjection_.matView = followCamera_->GetViewProjection().matView;
-	// 追従カメラのプロジェクション行列をゲームシーンのビュープロジェクションにコピー;
-	viewProjection_.matProjection = followCamera_->GetViewProjection().matProjection;
-	// ゲームシーンのビュープロジェクション行列の転送処理
-	viewProjection_.TransferMatrix();
+		// 追従カメラのビュー行列をゲームシーンのビュープロジェクションにコピー;
+		viewProjection_.matView = followCamera_->GetViewProjection().matView;
+		// 追従カメラのプロジェクション行列をゲームシーンのビュープロジェクションにコピー;
+		viewProjection_.matProjection = followCamera_->GetViewProjection().matProjection;
+		// ゲームシーンのビュープロジェクション行列の転送処理
+		viewProjection_.TransferMatrix();
 
-	// 衝突判定
-	if (enemy_->GetY() == 0) {
-		float dx = abs(player_->GetX() - enemy_->GetX());
-		float dz = abs(player_->GetZ() - enemy_->GetZ());
-		if (dx < 2 && dz < 2) {
-			enemy_->Hit();
+		// 衝突判定
+		if (enemy_->GetY() == 0) {
+			float dx = abs(player_->GetX() - enemy_->GetX());
+			float dz = abs(player_->GetZ() - enemy_->GetZ());
+			if (dx < 2 && dz < 2) {
+				enemy_->Hit();
+				hitCount_++;
+			}
 		}
+		if (hitCount_ >= 10) {
+			sceneMode_ = 2;
+		}
+		break;
+	case 1:
+		if (title_->Update() == true) {
+			sceneMode_ = 0u;
+			hitCount_ = 0;
+		}
+		break;
+	case 2:
+		if (gameClear_->Update() == true) {
+			sceneMode_ = 1u;
+		}
+		break;
 	}
 }
 
@@ -109,11 +148,15 @@ void GameScene::Draw() {
 	/// ここに3Dオブジェクトの描画処理を追加できる
 	/// </summary>
 
-	// 各クラスの描画
-	player_->Draw(viewProjection_);
-	skydome_->Draw(viewProjection_);
-	ground_->Draw(viewProjection_);
-	enemy_->Draw(viewProjection_);
+	switch (sceneMode_) {
+	case 0:
+		// 各クラスの描画
+		player_->Draw(viewProjection_);
+		skydome_->Draw(viewProjection_);
+		ground_->Draw(viewProjection_);
+		enemy_->Draw(viewProjection_);
+		break;
+	}
 
 	// 3Dオブジェクト描画後処理
 	Model::PostDraw();
@@ -126,6 +169,15 @@ void GameScene::Draw() {
 	/// <summary>
 	/// ここに前景スプライトの描画処理を追加できる
 	/// </summary>
+
+	switch (sceneMode_) {
+	case 1:
+		title_->Draw();
+		break;
+	case 2:
+		gameClear_->Draw();
+		break;
+	}
 
 	// スプライト描画後処理
 	Sprite::PostDraw();
